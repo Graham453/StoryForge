@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryForge</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0b0d12;
+      color: #f5f7fa;
+    }
+
+    header {
+      padding: 22px 20px;
+      border-bottom: 1px solid #242936;
+      background: #10131a;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      color: #9aa3b2;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: auto;
+      padding: 24px 18px 60px;
+    }
+
+    .card {
+      background: #11151d;
+      border: 1px solid #252b38;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      background: #090b10;
+      color: white;
+      border: 1px solid #303746;
+      border-radius: 9px;
+      padding: 13px;
+      font: inherit;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    textarea:focus,
+    input:focus {
+      border-color: #6c63ff;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #6c63ff;
+      color: white;
+    }
+
+    .secondary {
+      background: #252b38;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .file {
+      margin-top: 12px;
+      color: #aab2c0;
+    }
+
+    #status {
+      margin-top: 14px;
+      color: #aab2c0;
+      min-height: 20px;
+    }
+
+    #scenes {
+      display: grid;
+      gap: 14px;
+    }
+
+    .scene {
+      border: 1px solid #2a303d;
+      background: #0d1016;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .scene-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .scene-number {
+      font-weight: 800;
+      color: #8e88ff;
+    }
+
+    .scene textarea {
+      min-height: 95px;
+      margin-bottom: 10px;
+    }
+
+    video {
+      width: 100%;
+      max-height: 520px;
+      border-radius: 12px;
+      background: #050609;
+      margin-top: 12px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .hint {
+      color: #8d96a6;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .pill {
+      display: inline-block;
+      background: #202532;
+      color: #bfc6d4;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>StoryForge</h1>
+  <p>Turn one idea into a short playable movie.</p>
+</header>
+
+<main>
+
+  <section class="card">
+    <label for="story">Your story</label>
+
+    <textarea
+      id="story"
+      placeholder="Describe the story you want to turn into a movie..."
+    ></textarea>
+
+    <div style="height:14px"></div>
+
+    <label for="reference">Reference image</label>
+
+    <input
+      id="reference"
+      class="file"
+      type="file"
+      accept="image/*"
+    >
+
+    <p class="hint">
+      The image can be used as the visual reference for the story.
+    </p>
+
+    <div class="row">
+      <button id="generateBtn" class="primary">
+        Create Movie
+      </button>
+
+      <span id="status"></span>
+    </div>
+  </section>
+
+
+  <section id="storyboardCard" class="card hidden">
+
+    <div class="scene-head">
+      <div>
+        <h2 style="margin:0 0 5px">Storyboard</h2>
+        <span class="pill">60–120 second movie</span>
+      </div>
+
+      <button id="playBtn" class="primary">
+        Play Movie
+      </button>
+    </div>
+
+    <p class="hint">
+      Edit any scene, then regenerate only that scene.
+    </p>
+
+    <div id="scenes"></div>
+
+  </section>
+
+
+  <section id="movieCard" class="card hidden">
+
+    <h2 style="margin-top:0">Your Movie</h2>
+
+    <video id="movie" controls></video>
+
+    <div class="row" style="margin-top:12px">
+      <button id="replayBtn" class="secondary">
+        Replay
+      </button>
+    </div>
+
+  </section>
+
+</main>
+
+
+<script>
+  const storyInput = document.getElementById("story");
+  const referenceInput = document.getElementById("reference");
+  const generateBtn = document.getElementById("generateBtn");
+  const playBtn = document.getElementById("playBtn");
+  const replayBtn = document.getElementById("replayBtn");
+
+  const statusEl = document.getElementById("status");
+  const scenesEl = document.getElementById("scenes");
+
+  const storyboardCard = document.getElementById("storyboardCard");
+  const movieCard = document.getElementById("movieCard");
+  const movieEl = document.getElementById("movie");
+
+  let scenes = [];
+
+
+  function setStatus(message) {
+    statusEl.textContent = message;
+  }
+
+
+  function renderScenes() {
+    scenesEl.innerHTML = "";
+
+    scenes.forEach((scene, index) => {
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "scene";
+
+      wrapper.innerHTML = `
+        <div class="scene-head">
+          <span class="scene-number">
+            Scene ${index + 1}
+          </span>
+
+          <span class="pill">
+            ${scene.duration || 10}s
+          </span>
+        </div>
+
+        <textarea class="scene-text">${escapeHtml(scene.description || "")}</textarea>
+
+        <div class="row">
+          <button class="secondary regenerate">
+            Regenerate Scene
+          </button>
+
+          <span class="hint scene-status"></span>
+        </div>
+      `;
+
+      const textarea = wrapper.querySelector(".scene-text");
+      const regenerate = wrapper.querySelector(".regenerate");
+      const sceneStatus = wrapper.querySelector(".scene-status");
+
+      regenerate.addEventListener("click", async () => {
+
+        const newDescription = textarea.value.trim();
+
+        if (!newDescription) {
+          sceneStatus.textContent = "Add a scene description first.";
+          return;
+        }
+
+        sceneStatus.textContent = "Regenerating...";
+
+        try {
+
+          const response = await fetch("/api/regenerate-scene", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              sceneIndex: index,
+              description: newDescription,
+              scene
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error("Scene regeneration failed.");
+          }
+
+          const result = await response.json();
+
+          scenes[index] = {
+            ...scene,
+            ...result.scene,
+            description: newDescription
+          };
+
+          sceneStatus.textContent = "Scene regenerated.";
+
+        } catch (error) {
+          sceneStatus.textContent =
+            "Backend not connected yet.";
+        }
+      });
+
+      scenesEl.appendChild(wrapper);
+    });
+  }
+
+
+  generateBtn.addEventListener("click", async () => {
+
+    const story = storyInput.value.trim();
+
+    if (!story) {
+      setStatus("Write a story first.");
+      return;
+    }
+
+    generateBtn.disabled = true;
+    setStatus("Building your storyboard...");
+
+    const formData = new FormData();
+    formData.append("story", story);
+
+    if (referenceInput.files[0]) {
+      formData.append("reference", referenceInput.files[0]);
+    }
+
+    try {
+
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error("Generation failed.");
+      }
+
+      const result = await response.json();
+
+      scenes = result.scenes || [];
+
+      renderScenes();
+
+      storyboardCard.classList.remove("hidden");
+
+      setStatus("Storyboard ready.");
+
+    } catch (error) {
+
+      setStatus(
+        "The StoryForge backend is not connected yet."
+      );
+
+    } finally {
+
+      generateBtn.disabled = false;
+    }
+  });
+
+
+  playBtn.addEventListener("click", async () => {
+
+    playBtn.disabled = true;
+    setStatus("Creating your movie...");
+
+    try {
+
+      const response = await fetch("/api/render", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ scenes })
+      });
+
+      if (!response.ok) {
+        throw new Error("Movie rendering failed.");
+      }
+
+      const result = await response.json();
+
+      if (!result.videoUrl) {
+        throw new Error("No video returned.");
+      }
+
+      movieEl.src = result.videoUrl;
+
+      movieCard.classList.remove("hidden");
+
+      movieEl.play();
+
+      setStatus("Movie ready.");
+
+    } catch (error) {
+
+      setStatus(
+        "Movie rendering is not connected yet."
+      );
+
+    } finally {
+
+      playBtn.disabled = false;
+    }
+  });
+
+
+  replayBtn.addEventListener("click", () => {
+
+    movieEl.currentTime = 0;
+    movieEl.play();
+
+  });
+
+
+  function escapeHtml(value) {
+    return value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+</script>
+
+</body>
+</html>
