@@ -8,47 +8,63 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(express.json({ limit: "10mb" }));
-
-// Serve StoryForge
 app.use(express.static(__dirname));
 
-// Health check
 app.get("/health", (req, res) => {
   res.json({ status: "StoryForge is running" });
 });
 
-// StoryForge movie endpoint
-app.post("/api/movie", async (req, res) => {
+app.post("/api/generate", async (req, res) => {
   try {
     const { story } = req.body;
 
     if (!story || !story.trim()) {
-      return res.status(400).json({
-        error: "Please provide a story."
-      });
+      return res.status(400).json({ error: "Story is required." });
     }
 
-    console.log("Movie request received:", story);
-
-    // Temporary movie result
-    // This confirms the frontend can communicate with the backend.
     res.json({
-      success: true,
-      message: "Story received by StoryForge backend.",
-      story: story,
-      movie: {
-        title: "StoryForge Movie",
-        duration: 20,
-        status: "ready"
-      }
+      scenes: [
+        {
+          description: story.trim(),
+          duration: 20
+        }
+      ]
     });
-
   } catch (error) {
     console.error(error);
+    res.status(500).json({ error: "Generation failed." });
+  }
+});
 
-    res.status(500).json({
-      error: "StoryForge backend error."
+app.post("/api/regenerate-scene", async (req, res) => {
+  try {
+    const { description, scene } = req.body;
+
+    res.json({
+      scene: {
+        ...(scene || {}),
+        description: description || scene?.description || "Updated scene",
+        duration: scene?.duration || 20
+      }
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Scene regeneration failed." });
+  }
+});
+
+app.post("/api/render", async (req, res) => {
+  try {
+    const { scenes } = req.body;
+
+    res.json({
+      videoUrl: null,
+      status: "ready",
+      scenes: scenes || []
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Render failed." });
   }
 });
 
